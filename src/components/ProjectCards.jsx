@@ -54,90 +54,131 @@ const Card = ({ project }) => {
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={{
-            width: "320px", // Slightly wider for better text fit
-            background: "rgba(20, 20, 25, 0.7)",
-            backdropFilter: "blur(10px)",
-            borderRadius: "16px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            width: "340px",
+            background: "rgba(8, 12, 24, 0.85)", // Deep space dark
+            backdropFilter: "blur(12px)",
+            borderRadius: "4px", // More angular/techy
+            borderLeft: "2px solid rgba(0, 198, 255, 0.6)", // Tech accent on left
+            borderTop: "1px solid rgba(0, 198, 255, 0.2)",
+            borderRight: "1px solid rgba(0, 198, 255, 0.1)",
+            borderBottom: "1px solid rgba(0, 198, 255, 0.1)",
             padding: "24px",
-            color: "white",
-            fontFamily: "Inter, sans-serif",
-            transition: "transform 0.2s, background 0.2s",
-            transform: hovered ? "scale(1.05)" : "scale(1)",
+            color: "#e0f7ff",
+            fontFamily: "'Rajdhani', 'Inter', sans-serif", // Suggesting a tech font if available, reverting to Inter
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            transform: hovered ? "scale(1.05) translateZ(20px)" : "scale(1) translateZ(0px)",
             boxShadow: hovered
-              ? "0 0 30px rgba(0, 150, 255, 0.3)"
-              : "0 0 10px rgba(0,0,0,0.5)",
-            cursor: "auto", // Ensure system cursor shows
+              ? "0 0 40px rgba(0, 198, 255, 0.2), inset 0 0 20px rgba(0, 198, 255, 0.05)"
+              : "0 0 15px rgba(0, 0, 0, 0.5), inset 0 0 0 rgba(0,0,0,0)",
+            cursor: "auto",
             userSelect: "none",
             display: "flex",
             flexDirection: "column",
             alignItems: "flex-start",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
+          {/* Decorative tech lines */}
+          <div style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "30px",
+            height: "30px",
+            borderTop: "2px solid rgba(0, 198, 255, 0.4)",
+            borderRight: "2px solid rgba(0, 198, 255, 0.4)",
+            pointerEvents: "none"
+          }} />
+
+          <div style={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            width: "10px",
+            height: "10px",
+            background: "rgba(0, 198, 255, 0.4)",
+            pointerEvents: "none"
+          }} />
+
           {/* Logo Section */}
           <div
             style={{
-              width: "auto",
-              minWidth: "60px",
-              height: "60px",
-              marginBottom: "15px",
-              borderRadius: project.logo ? "0" : "12px",
-              overflow: "visible",
-              background: project.logo
-                ? "transparent"
-                : "linear-gradient(135deg, #00c6ff, #0072ff)",
+              width: "100%",
               display: "flex",
               alignItems: "center",
-              justifyContent: "flex-start",
-              boxShadow: project.logo ? "none" : "0 4px 12px rgba(0,0,0,0.2)",
+              marginBottom: "18px",
+              borderBottom: "1px solid rgba(0, 198, 255, 0.15)",
+              paddingBottom: "12px",
             }}
           >
-            {project.logo ? (
-              <img
-                src={project.logo}
-                alt={`${project.title} logo`}
-                style={{
-                  width: "auto",
-                  height: "100%",
-                  maxWidth: "100%",
-                  objectFit: "contain",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "60px",
-                  height: "60px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "12px",
-                  background: "linear-gradient(135deg, #00c6ff, #0072ff)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                }}
-              >
-                <span style={{ fontSize: "24px", fontWeight: "bold" }}>
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                marginRight: "16px",
+                borderRadius: project.logo ? "0" : "4px",
+                background: project.logo
+                  ? "transparent"
+                  : "rgba(0, 198, 255, 0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: project.logo ? "none" : "1px solid rgba(0, 198, 255, 0.3)",
+              }}
+            >
+              {project.logo ? (
+                <img
+                  src={project.logo}
+                  alt={`${project.title} logo`}
+                  style={{
+                    width: "auto",
+                    height: "100%",
+                    maxWidth: "100%",
+                    objectFit: "contain",
+                    filter: "drop-shadow(0 0 5px rgba(0,0,0,0.5))"
+                  }}
+                />
+              ) : (
+                <span style={{ fontSize: "20px", fontWeight: "bold", color: "#00c6ff" }}>
                   {project.title[0]}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{
+                fontSize: "0.7rem",
+                color: "#00c6ff",
+                letterSpacing: "2px",
+                textTransform: "uppercase",
+                opacity: 0.8
+              }}>
+                Project Unit {project.id.toString().padStart(2, '0')}
+              </span>
+              <h3
+                style={{
+                  margin: "2px 0 0 0",
+                  fontSize: "1.25rem",
+                  fontWeight: "700",
+                  letterSpacing: "0.5px",
+                  color: "#ffffff",
+                  textShadow: "0 0 10px rgba(0, 198, 255, 0.3)"
+                }}
+              >
+                {project.title}
+              </h3>
+            </div>
           </div>
 
-          <h3
-            style={{
-              margin: "0 0 8px 0",
-              fontSize: "1.4rem",
-              fontWeight: "700",
-            }}
-          >
-            {project.title}
-          </h3>
           <p
             style={{
-              margin: "0 0 16px 0",
-              fontSize: "0.95rem",
-              color: "#b0b0b0",
-              lineHeight: "1.5",
+              margin: "0 0 20px 0",
+              fontSize: "0.9rem",
+              color: "#a0aec0",
+              lineHeight: "1.6",
+              fontWeight: "300",
+              letterSpacing: "0.3px",
             }}
           >
             {project.description}
@@ -146,22 +187,24 @@ const Card = ({ project }) => {
           <div
             style={{
               display: "flex",
-              gap: "8px",
+              gap: "6px",
               flexWrap: "wrap",
-              marginBottom: "20px",
+              marginBottom: "24px",
+              width: "100%"
             }}
           >
             {project.tools.map((tool, index) => (
               <span
                 key={index}
                 style={{
-                  background: "rgba(255, 255, 255, 0.08)",
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  fontSize: "0.75rem",
-                  color: "#88ccff",
-                  fontWeight: "500",
-                  border: "1px solid rgba(255,255,255,0.05)",
+                  background: "rgba(0, 198, 255, 0.05)",
+                  padding: "4px 10px",
+                  borderRadius: "2px", // Tech corners
+                  fontSize: "0.7rem",
+                  color: "#5ce1e6",
+                  fontFamily: "monospace",
+                  border: "1px solid rgba(0, 198, 255, 0.2)",
+                  letterSpacing: "0.5px"
                 }}
               >
                 {tool}
@@ -177,23 +220,34 @@ const Card = ({ project }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "8px",
-              background: "white",
-              color: "black",
+              gap: "10px",
+              background: "transparent",
+              color: "#00c6ff",
               textDecoration: "none",
               padding: "10px 16px",
-              borderRadius: "8px",
+              borderRadius: "4px",
               fontWeight: "600",
-              fontSize: "0.9rem",
-              transition: "background 0.2s",
+              fontSize: "0.85rem",
+              letterSpacing: "1px",
+              textTransform: "uppercase",
+              border: "1px solid rgba(0, 198, 255, 0.5)",
+              transition: "all 0.2s",
               width: "100%",
               boxSizing: "border-box",
+              position: "relative",
+              overflow: "hidden"
             }}
-            onMouseEnter={(e) => (e.target.style.background = "#e0e0e0")}
-            onMouseLeave={(e) => (e.target.style.background = "white")}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(0, 198, 255, 0.15)";
+              e.currentTarget.style.boxShadow = "0 0 15px rgba(0, 198, 255, 0.25)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.boxShadow = "none";
+            }}
           >
-            <Github size={18} />
-            View Source
+            <Github size={16} />
+            Initialize Repo
           </a>
         </div>
       </Html>

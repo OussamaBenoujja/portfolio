@@ -36,10 +36,10 @@ const CameraManager = ({ viewMode }) => {
       controlsRef.current.setLookAt(
         50,
         0,
-        0.001, // Position (Extremely close: 1 unit away)
-        50,
-        0,
-        0, // Target (Exact center)
+        8, // Position (Start further back to see everything)
+        50, // TargetX
+        0,  // TargetY
+        0,  // TargetZ
         true, // Animate
       );
     } else {
@@ -51,19 +51,12 @@ const CameraManager = ({ viewMode }) => {
   return (
     <CameraControls
       ref={controlsRef}
-      maxDistance={10}
-      minDistance={0.001} // Allow getting right up to the hull
+      maxDistance={40} // increased to allow zooming out
+      minDistance={2} // prevents clipping
       smoothTime={0.25}
-      makeDefault // Inspects mouse events properly
-      dollySpeed={0.5}
-      // Lock the target (No Panning)
-      truckSpeed={0}
-      mouseButtons={{
-        left: 1, // Rotate
-        middle: 8, // Dolly
-        right: 0, // Disable Pan
-        wheel: 8, // Dolly
-      }}
+      makeDefault
+      dollySpeed={1}
+      truckSpeed={1} // Enable panning (standard for review)
     />
   );
 };
