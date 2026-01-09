@@ -94,7 +94,170 @@ const SunShaderMaterial = shaderMaterial(
     `
 );
 
-extend({ SunShaderMaterial });
+// --- Volumetric Corona Shader ---
+// Renders the "atmosphere" of the sun using an inverted sphere and Fresnel math.
+// This creates a 3D glow that wraps around the object, visible from all angles.
+const CoronaShaderMaterial = shaderMaterial(
+    {
+        uColor: new THREE.Color('#ffaa00'), // Yellow-Gold
+        uCoefficient: 0.7, // Bias for the fresnel
+        uPower: 2.5,       // Tightness of the glow
+    },
+    // Vertex Shader
+    `
+    varying vec3 vNormal;
+    varying vec3 vPositionEye;
+    void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        vPositionEye = mvPosition.xyz;
+        gl_Position = projectionMatrix * mvPosition;
+    }
+    `,
+    // Fragment Shader
+    `
+    uniform vec3 uColor;
+    uniform float uCoefficient;
+    uniform float uPower;
+    varying vec3 vNormal;
+    varying vec3 vPositionEye;
+    void main() {
+        vec3 normal = normalize(vNormal);
+        vec3 viewDir = normalize(-vPositionEye);
+        
+        // Calculate Fresnel for BackSide Sphere
+        // Normal points OUT (away from camera at center). ViewDir points TO camera.
+        // Dot product is ~ -1 at center, 0 at lim/edge.
+        // We want 1.0 intensity at center (dense atmosphere) and 0.0 at edge (thin).
+        
+        float dotProd = dot(normal, viewDir);
+        
+        // Use abs() or just negate to be safe. We want the magnitude.
+        // 1.0 at center, 0.0 at edge.
+        float intensity = pow(abs(dotProd), uPower);
+        
+        // Boost brightness slightly
+        intensity = intensity * uCoefficient;
+
+        // Additive blending will take this alpha and add color
+        gl_FragColor = vec4(uColor, intensity);
+    }
+    `
+);
+
+// --- Saturn Ring Texture Generator ---
+// Creates a high-res 1D texture resembling a vinyl record with the Cassini Division
+const getRingTexture = () => {
+    // Check for browser environment
+    if (typeof document === 'undefined') return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    const image = ctx.createImageData(1024, 1);
+
+    for (let i = 0; i < 1024; i++) {
+        const u = i / 1024;
+        const k = i * 4;
+
+        // Base physics: inner rings denser, Cassini division empty
+        // Normalized radial distance: 0 (Inner edge) -> 1 (Outer edge)
+
+        let alpha = 1.0;
+
+        // Cassini Division (Sharp gap ~0.7)
+        if (u > 0.68 && u < 0.72) {
+            image.data[k] = 0;
+            image.data[k + 1] = 0;
+            image.data[k + 2] = 0;
+            image.data[k + 3] = 20; // Almost transparent
+            continue;
+        }
+
+        // Generate Bands (High frequency noise)
+        // High freq sine waves to simulate thousands of ringlets
+        const band1 = Math.sin(u * 400.0);
+        const band2 = Math.cos(u * 200.0);
+        const fine = Math.sin(u * 1000.0);
+
+        let density = 0.6 + 0.2 * band1 + 0.1 * band2 + 0.1 * fine;
+
+        // Color logic
+        // Inner C Ring (Darker/Translucent)
+        let r = 210, g = 190, b = 150; // Beige/Gold Base
+
+        if (u < 0.25) { // C Ring
+            r = 100; g = 90; b = 80;
+            alpha = 0.5;
+        } else if (u < 0.68) { // B Ring (Brightest)
+            r = 230; g = 210; b = 170;
+            density += 0.1;
+        } else { // A Ring (Outer)
+            r = 190; g = 180; b = 160;
+        }
+
+        // Apply density
+        r *= density;
+        g *= density;
+        b *= density;
+
+        // Soft Fades at geometry edges
+        if (u < 0.05) alpha *= (u / 0.05);
+        if (u > 0.95) alpha *= ((1.0 - u) / 0.05);
+
+        image.data[k] = r;
+        image.data[k + 1] = g;
+        image.data[k + 2] = b;
+        image.data[k + 3] = alpha * 255;
+    }
+
+    ctx.putImageData(image, 0, 0);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.minFilter = THREE.LinearFilter;
+    return texture;
+};
+
+// --- Saturn Ring Shader (Texture Based) ---
+const SaturnRingShaderMaterial = shaderMaterial(
+    {
+        uTexture: null,
+        innerRadius: 1.8,
+        outerRadius: 4.0,
+    },
+    // Vertex Shader
+    `
+    varying vec3 vPos;
+    void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+    `,
+    // Fragment Shader
+    `
+    uniform sampler2D uTexture;
+    uniform float innerRadius;
+    uniform float outerRadius;
+    varying vec3 vPos;
+
+    void main() {
+        // Map local radius to texture UV (0..1)
+        float r = length(vPos);
+        float u = (r - innerRadius) / (outerRadius - innerRadius);
+        
+        if (u < 0.0 || u > 1.0) discard;
+        
+        // Sample texture
+        vec4 color = texture2D(uTexture, vec2(u, 0.5));
+        
+        gl_FragColor = color;
+    }
+    `
+);
+
+extend({ SunShaderMaterial, CoronaShaderMaterial, SaturnRingShaderMaterial });
 
 const Sun = () => {
     const materialRef = useRef();
@@ -106,14 +269,44 @@ const Sun = () => {
     });
 
     return (
-        <mesh position={[0, 0, -5]}>
-            <sphereGeometry args={[2.5, 64, 64]} />
-            <sunShaderMaterial ref={materialRef} transparent />
-            {/* Inner Point Light for Illumination */}
-            <pointLight intensity={30} distance={100} decay={1} color="#ffaa00" />
+        <group position={[0, 0, -5]}>
+            {/* Core Sun Surface */}
+            <mesh>
+                <sphereGeometry args={[2.5, 64, 64]} />
+                <sunShaderMaterial ref={materialRef} transparent />
+            </mesh>
 
-            {/* Outer Glow using a larger inverted sphere or Sprite (Optional, kept simple for performance) */}
-        </mesh>
+            {/* Inner Point Light for Illumination */}
+            <pointLight intensity={50} distance={100} decay={1} color="#ffaa00" />
+
+            {/* Layer 1: Inner Dense Glow (Golden/Bright) */}
+            <mesh scale={[1.2, 1.2, 1.2]}>
+                <sphereGeometry args={[2.5, 64, 64]} />
+                <coronaShaderMaterial
+                    uColor={new THREE.Color('#ffcc00')}
+                    uCoefficient={0.8}
+                    uPower={4.0}
+                    transparent
+                    side={THREE.BackSide}
+                    blending={THREE.AdditiveBlending}
+                    depthWrite={false}
+                />
+            </mesh>
+
+            {/* Layer 2: Outer Soft Haze (Orange/Reddish) */}
+            <mesh scale={[1.5, 1.5, 1.5]}>
+                <sphereGeometry args={[2.5, 64, 64]} />
+                <coronaShaderMaterial
+                    uColor={new THREE.Color('#ffaa00')}
+                    uCoefficient={0.5}
+                    uPower={2.0} // Softer falloff
+                    transparent
+                    side={THREE.BackSide}
+                    blending={THREE.AdditiveBlending}
+                    depthWrite={false}
+                />
+            </mesh>
+        </group>
     );
 };
 
@@ -189,6 +382,97 @@ const Planet = ({ onClick }) => {
     );
 };
 
+const Saturn = ({ onClick }) => {
+    const meshRef = useRef();
+    const ringRef = useRef();
+    const highlightRef = useRef();
+    const [hovered, setHover] = useState(false);
+
+    // Load texture for planet surface
+    const texture = useLoader(THREE.TextureLoader, '/saturn_texture.png');
+
+    // Generate ring texture (Memoized to run once)
+    const ringTexture = useMemo(() => getRingTexture(), []);
+
+    useFrame((state, delta) => {
+        if (meshRef.current) {
+            meshRef.current.rotation.y += delta * 0.08;
+        }
+        if (ringRef.current) {
+            // Rings rotate with planet or slightly different? Usually physically locked.
+            ringRef.current.rotation.z += delta * 0.02; // Visual interest
+        }
+        if (highlightRef.current) {
+            highlightRef.current.rotation.y += delta * 0.08;
+        }
+    });
+
+    return (
+        <group position={[-8, 1, 4]} rotation={[0.4, 0, 0.2]}> {/* Tilted orbit position */}
+            <group rotation={[0, 0, 0.4]}> {/* Axial Tilt */}
+                {/* The Planet itself */}
+                <mesh
+                    ref={meshRef}
+                    onPointerOver={() => { document.body.style.cursor = 'pointer'; setHover(true); }}
+                    onPointerOut={() => { document.body.style.cursor = 'none'; setHover(false); }}
+                    onClick={onClick}
+                >
+                    <sphereGeometry args={[1.4, 64, 64]} />
+                    <meshStandardMaterial
+                        map={texture}
+                        roughness={0.6}
+                        metalness={0.1}
+                    />
+                </mesh>
+
+                {/* The Rings */}
+                <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[1.8, 4.0, 128]} /> {/* 1.8 to 4.0 matching Shader */}
+                    <saturnRingShaderMaterial
+                        uTexture={ringTexture}
+                        transparent
+                        side={THREE.DoubleSide}
+                        depthWrite={false}
+                    />
+                </mesh>
+
+                {/* Scale-based Outline (Manual "Pass") - Only visible on hover */}
+                {hovered && (
+                    <mesh ref={highlightRef} scale={[1.05, 1.05, 1.05]}>
+                        <sphereGeometry args={[1.4, 64, 64]} />
+                        <meshBasicMaterial
+                            color="white"
+                            transparent
+                            opacity={0.3}
+                            side={THREE.BackSide} // Outline effect
+                        />
+                    </mesh>
+                )}
+            </group>
+
+            {/* HTML Label - Safe from WebGL Font Crashes */}
+            <Html position={[0, 2.5, 0]} center style={{ pointerEvents: 'none' }}>
+                <div style={{
+                    opacity: hovered ? 1 : 0,
+                    transition: 'opacity 0.2s',
+                    color: '#ffddaa', // Beige/Gold text
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    letterSpacing: '2px',
+                    textShadow: '0 0 10px rgba(0,0,0,1)',
+                    background: 'rgba(0,0,0,0.6)',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontFamily: 'sans-serif',
+                    whiteSpace: 'nowrap'
+                }}>
+                    ABOUT ME
+                </div>
+            </Html>
+        </group>
+    );
+};
+
 const Scene = ({ onProjectEnter }) => {
     const groupRef = useRef();
 
@@ -203,6 +487,7 @@ const Scene = ({ onProjectEnter }) => {
         <group ref={groupRef} position={[0, 0, -20]} rotation={[0.2, 0, 0]}>
             <Sun />
             <Planet onClick={onProjectEnter} />
+            <Saturn onClick={() => alert("About Me Clicked! (Placeholder)")} />
             <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
         </group>
     );

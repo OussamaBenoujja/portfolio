@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import ParticleHero from './components/ParticleHero';
 import Experience from './components/Experience';
+import LoadingScreen from './components/LoadingScreen';
 
 // import { ShuttleTunerScene } from './components/ShuttleTunerScene';
 
@@ -21,8 +22,13 @@ function App() {
 
     return (
         <div className="app">
+            {/* Loading Screen Overlay (Tracks global loading state) */}
+            <LoadingScreen />
+
             {/* Unified 3D Experience */}
-            <Experience viewMode={viewMode} setViewMode={setViewMode} />
+            <Suspense fallback={null}>
+                <Experience viewMode={viewMode} setViewMode={setViewMode} />
+            </Suspense>
 
             {/* 2D Overlay (Hero Text) - Fades out in projects mode */}
             <div style={{
