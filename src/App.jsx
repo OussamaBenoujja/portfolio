@@ -2,6 +2,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import ParticleHero from './components/ParticleHero';
 import Experience from './components/Experience';
 import LoadingScreen from './components/LoadingScreen';
+import AboutMeScene from './components/AboutMeScene';
 
 // import { ShuttleTunerScene } from './components/ShuttleTunerScene';
 
@@ -9,8 +10,9 @@ function App() {
     // TEMPORARY: Render Tuner Scene Only
     // return <ShuttleTunerScene />;
 
-    // Original App Content (Restored)
-    const [viewMode, setViewMode] = useState('hero'); // 'hero' | 'projects'
+    // State for main scene vs separate playable scenes
+    const [currentScene, setCurrentScene] = useState('about-me'); // Default to new scene for development
+    const [viewMode, setViewMode] = useState('hero');
 
     useEffect(() => {
         if (viewMode === 'projects') {
@@ -22,22 +24,29 @@ function App() {
 
     return (
         <div className="app">
-            {/* Loading Screen Overlay (Tracks global loading state) */}
+            {/* Loading Screen Overlay */}
             <LoadingScreen />
 
-            {/* Unified 3D Experience */}
+            {/* Scene Routing */}
             <Suspense fallback={null}>
-                <Experience viewMode={viewMode} setViewMode={setViewMode} />
+                {currentScene === 'main' && (
+                    <Experience viewMode={viewMode} setViewMode={setViewMode} />
+                )}
+                {currentScene === 'about-me' && (
+                    <AboutMeScene />
+                )}
             </Suspense>
 
-            {/* 2D Overlay (Hero Text) - Fades out in projects mode */}
-            <div style={{
-                opacity: viewMode === 'hero' ? 1 : 0,
-                transition: 'opacity 1s ease',
-                pointerEvents: 'none'
-            }}>
-                <ParticleHero />
-            </div>
+            {/* UI Overlays (Only visible in Main Scene for now) */}
+            {currentScene === 'main' && (
+                <div style={{
+                    opacity: viewMode === 'hero' ? 1 : 0,
+                    transition: 'opacity 1s ease',
+                    pointerEvents: 'none'
+                }}>
+                    <ParticleHero />
+                </div>
+            )}
         </div>
     );
 }
