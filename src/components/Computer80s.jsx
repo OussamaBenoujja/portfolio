@@ -102,7 +102,6 @@ export const Computer80s = forwardRef((props, ref) => {
             <Html
                 position={props.labelPosition || [0.5, 1, 0]}
                 center
-                distanceFactor={15}
                 zIndexRange={[200, 0]} // High Z-index range
                 style={{ pointerEvents: 'none' }}
             >

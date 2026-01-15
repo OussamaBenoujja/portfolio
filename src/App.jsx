@@ -11,7 +11,7 @@ function App() {
     // return <ShuttleTunerScene />;
 
     // State for main scene vs separate playable scenes
-    const [currentScene, setCurrentScene] = useState('about-me'); // Default to new scene for development
+    const [currentScene, setCurrentScene] = useState('main');
     const [viewMode, setViewMode] = useState('hero');
 
     useEffect(() => {
@@ -30,10 +30,14 @@ function App() {
             {/* Scene Routing */}
             <Suspense fallback={null}>
                 {currentScene === 'main' && (
-                    <Experience viewMode={viewMode} setViewMode={setViewMode} />
+                    <Experience
+                        viewMode={viewMode}
+                        setViewMode={setViewMode}
+                        onAboutMeEnter={() => setCurrentScene('about-me')}
+                    />
                 )}
                 {currentScene === 'about-me' && (
-                    <AboutMeScene />
+                    <AboutMeScene onBack={() => setCurrentScene('main')} />
                 )}
             </Suspense>
 

@@ -473,7 +473,7 @@ const Saturn = ({ onClick }) => {
     );
 };
 
-const Scene = ({ onProjectEnter }) => {
+const Scene = ({ onProjectEnter, onAboutMeEnter }) => {
     const groupRef = useRef();
 
     useFrame((state, delta) => {
@@ -487,15 +487,15 @@ const Scene = ({ onProjectEnter }) => {
         <group ref={groupRef} position={[0, 0, -20]} rotation={[0.2, 0, 0]}>
             <Sun />
             <Planet onClick={onProjectEnter} />
-            <Saturn onClick={() => alert("About Me Clicked! (Placeholder)")} />
+            <Saturn onClick={onAboutMeEnter} />
             <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
         </group>
     );
 };
 
-export const SolarSystemScene = ({ onProjectEnter }) => {
+export const SolarSystemScene = ({ onProjectEnter, onAboutMeEnter }) => {
     return (
-        <Scene onProjectEnter={onProjectEnter} />
+        <Scene onProjectEnter={onProjectEnter} onAboutMeEnter={onAboutMeEnter} />
     );
 };
 

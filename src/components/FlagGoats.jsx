@@ -69,7 +69,6 @@ export const FlagGoats = forwardRef((props, ref) => {
             <Html
                 position={[0, 4, 0]}
                 center
-                distanceFactor={15}
                 zIndexRange={[200, 0]}
                 style={{ pointerEvents: 'none' }}
             >

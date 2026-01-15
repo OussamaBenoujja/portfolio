@@ -61,7 +61,7 @@ const CameraManager = ({ viewMode }) => {
   );
 };
 
-const Experience = ({ viewMode, setViewMode }) => {
+const Experience = ({ viewMode, setViewMode, onAboutMeEnter }) => {
   return (
     <div
       style={{
@@ -82,7 +82,10 @@ const Experience = ({ viewMode, setViewMode }) => {
 
         {/* SCENE 1: Solar System */}
         <group visible={true}>
-          <SolarSystemScene onProjectEnter={() => setViewMode("projects")} />
+          <SolarSystemScene
+            onProjectEnter={() => setViewMode("projects")}
+            onAboutMeEnter={onAboutMeEnter}
+          />
         </group>
 
         {/* SCENE 2: ISS Station (Destination) */}

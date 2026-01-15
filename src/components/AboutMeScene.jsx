@@ -32,7 +32,7 @@ const Computer80sWithControls = ({ onInteractionChange }) => {
     const position = [0, -1, 100];
     const rotation = [0, -4.641592653589793, 0];
     const scale = 4;
-    const labelPosition = [0.5, 1, 0];
+    const labelPosition = [0.5, 2.5, 0];
 
     return <Computer80s position={position} rotation={rotation} scale={scale} labelPosition={labelPosition} onInteractionChange={onInteractionChange} />;
 };
@@ -99,7 +99,7 @@ const TPSCamera = ({ characterRef }) => {
     return null;
 };
 
-const AboutMeScene = () => {
+const AboutMeScene = ({ onBack }) => {
     const characterRef = useRef();
     const terrainRef = useRef();
     const [joystickState, setJoystickState] = React.useState({ x: 0, y: 0 });
