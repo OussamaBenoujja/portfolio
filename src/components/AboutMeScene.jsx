@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { PointerLockControls, Stars, KeyboardControls, Environment, useGLTF } from '@react-three/drei';
 import Character from './Character';
@@ -8,6 +8,11 @@ import * as THREE from 'three';
 import { Leva, useControls } from 'leva';
 import VirtualJoystick from './VirtualJoystick';
 import ControlsHelp from './ControlsHelp';
+import InteractionPrompt from './InteractionPrompt';
+import MePage from './MePage';
+import SkillRing from './SkillRing';
+import { FlagGoats } from './FlagGoats';
+import GoatsPopup from './GoatsPopup';
 
 const EAGLE_DEFAULTS = {
     position: [7, -3, -65],
@@ -19,24 +24,26 @@ const MAP_RADIUS = 300;
 const EAGLE_COLLIDER_RADIUS = 8; // Adjust based on model size
 
 const EagleModuleWithControls = () => {
-    const { position, rotation, scale } = useControls("Eagle Module", {
-        position: { value: EAGLE_DEFAULTS.position, step: 1 },
-        rotation: { value: EAGLE_DEFAULTS.rotation, step: 0.1 },
-        scale: { value: EAGLE_DEFAULTS.scale, min: 0.1, max: 10, step: 0.1 }
-    });
-
-    return <EagleModule position={position} rotation={rotation} scale={scale} />;
+    return <EagleModule position={EAGLE_DEFAULTS.position} rotation={EAGLE_DEFAULTS.rotation} scale={EAGLE_DEFAULTS.scale} />;
 };
 
-const Computer80sWithControls = () => {
-    const { position, rotation, scale, labelPosition } = useControls("Computer 80s", {
-        position: { value: [5, -7, 116], step: 1 },
-        rotation: { value: [0, -180, 0.2], step: 0.1 },
-        scale: { value: 1.8, min: 0.1, max: 10, step: 0.1 },
-        labelPosition: { value: [0.5, 5, 0], step: 0.5, label: "Label Offset" }
-    });
+const Computer80sWithControls = ({ onInteractionChange }) => {
+    // Fixed coordinates after tuning
+    const position = [0, -1, 100];
+    const rotation = [0, -4.641592653589793, 0];
+    const scale = 4;
+    const labelPosition = [0.5, 1, 0];
 
-    return <Computer80s position={position} rotation={rotation} scale={scale} labelPosition={labelPosition} />;
+    return <Computer80s position={position} rotation={rotation} scale={scale} labelPosition={labelPosition} onInteractionChange={onInteractionChange} />;
+};
+
+const FlagGoatsWithControls = ({ onInteractionChange }) => {
+    // Fixed coordinates
+    const position = [10, 1, 12];
+    const rotation = [0, 0, 0];
+    const scale = 6;
+
+    return <FlagGoats position={position} rotation={rotation} scale={scale} onInteractionChange={onInteractionChange} />;
 };
 
 const keyboardMap = [
@@ -53,11 +60,10 @@ const MoonTerrain = React.forwardRef((props, ref) => {
 });
 
 const TPSCamera = ({ characterRef }) => {
-    const { targetY, followSpeed, distance } = useControls("Camera Settings", {
-        targetY: { value: 6.3, min: 0, max: 10, label: "Look Height" },
-        followSpeed: { value: 0.83, min: 0.01, max: 1, label: "Follow Speed" },
-        distance: { value: 10, min: 2, max: 20, label: "Distance" }
-    });
+    // Fixed camera settings
+    const targetY = 6.3;
+    const followSpeed = 0.83;
+    const distance = 10;
 
     // Store current pivot position for smoothing
     const pivot = useRef(new THREE.Vector3());
@@ -99,6 +105,44 @@ const AboutMeScene = () => {
     const [joystickState, setJoystickState] = React.useState({ x: 0, y: 0 });
     const [isMobile, setIsMobile] = React.useState(false);
 
+    // Interaction State: 'computer', 'goats', or null
+    const [interactionTarget, setInteractionTarget] = React.useState(null);
+    const [showMePage, setShowMePage] = React.useState(false);
+    const [showGoatsPopup, setShowGoatsPopup] = React.useState(false);
+
+    // Handle 'F' key press for interaction
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key.toLowerCase() === 'f') {
+                if (interactionTarget && !showMePage && !showGoatsPopup) {
+                    console.log(`INTERACTION TRIGGERED with ${interactionTarget}`);
+                    if (interactionTarget === 'computer') {
+                        setShowMePage(true);
+                    } else if (interactionTarget === 'goats') {
+                        setShowGoatsPopup(true);
+                    }
+                    document.exitPointerLock(); // Unlock cursor
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [interactionTarget, showMePage, showGoatsPopup]);
+
+    // Close handlers
+    const handleCloseMePage = () => setShowMePage(false);
+    const handleCloseGoatsPopup = () => setShowGoatsPopup(false);
+
+    // Helper to set interaction target with debounce/check
+    const handleInteractionChange = (target, isClose) => {
+        if (isClose) {
+            setInteractionTarget(target);
+        } else {
+            setInteractionTarget(prev => (prev === target ? null : prev));
+        }
+    };
+
     const eagleCollider = React.useMemo(() => ({
         position: new THREE.Vector3(...EAGLE_DEFAULTS.position),
         radius: EAGLE_COLLIDER_RADIUS
@@ -111,6 +155,30 @@ const AboutMeScene = () => {
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Pointer Lock Change Listener for Cursor Visibility
+    useEffect(() => {
+        const handlePointerLockChange = () => {
+            if (document.pointerLockElement === null) {
+                document.body.classList.add('cursor-active');
+            } else {
+                document.body.classList.remove('cursor-active');
+            }
+        };
+
+        document.addEventListener('pointerlockchange', handlePointerLockChange);
+        document.addEventListener('mozpointerlockchange', handlePointerLockChange);
+
+        // Initial check
+        if (document.pointerLockElement === null) {
+            document.body.classList.add('cursor-active');
+        }
+
+        return () => {
+            document.removeEventListener('pointerlockchange', handlePointerLockChange);
+            document.removeEventListener('mozpointerlockchange', handlePointerLockChange);
+        };
     }, []);
 
     return (
@@ -133,6 +201,9 @@ const AboutMeScene = () => {
             {/* UI Overlays */}
             <ControlsHelp />
             {isMobile && <VirtualJoystick onMove={setJoystickState} />}
+            <InteractionPrompt visible={!!interactionTarget && !showMePage && !showGoatsPopup} />
+            {showMePage && <MePage onClose={handleCloseMePage} />}
+            {showGoatsPopup && <GoatsPopup onClose={handleCloseGoatsPopup} />}
 
 
 
@@ -152,6 +223,11 @@ const AboutMeScene = () => {
                     {/* Atmosphere */}
                     <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
+                    {/* Sky Ring of Skills */}
+                    <Suspense fallback={null}>
+                        <SkillRing />
+                    </Suspense>
+
                     {/* Ground: Moon Terrain */}
                     <MoonTerrain ref={terrainRef} scale={[200, 200, 200]} position={[0, -2, 0]} receiveShadow />
 
@@ -167,13 +243,14 @@ const AboutMeScene = () => {
                     />
 
                     <EagleModuleWithControls />
-                    <Computer80sWithControls />
+                    <Computer80sWithControls onInteractionChange={(val) => handleInteractionChange('computer', val)} />
+                    <FlagGoatsWithControls onInteractionChange={(val) => handleInteractionChange('goats', val)} />
 
                     {/* TPS Camera Logic */}
                     <TPSCamera characterRef={characterRef} />
 
-                    {/* Controls - PointerLock for 'Mouse Look' */}
-                    <PointerLockControls makeDefault />
+                    {/* Controls - PointerLock for 'Mouse Look' - Only active when menu is closed */}
+                    {!showMePage && !showGoatsPopup && <PointerLockControls makeDefault />}
                 </Canvas>
             </KeyboardControls>
         </div>

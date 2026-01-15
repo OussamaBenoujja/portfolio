@@ -1,10 +1,11 @@
+
 import React, { forwardRef, useState, useRef, useMemo } from 'react';
 import { useGLTF, Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
 export const Computer80s = forwardRef((props, ref) => {
-    const { scene } = useGLTF('/computer80s.glb');
+    const { nodes, materials, scene } = useGLTF('/arcadeMachineBenoujja.glb');
     const [hovered, setHovered] = useState(false);
     const internalRef = useRef();
     const { camera } = useThree();
@@ -54,24 +55,29 @@ export const Computer80s = forwardRef((props, ref) => {
             }
             frameCount.current++;
 
-            if (intersects.length > 0) {
-                // Increased distance check to 100 to ensure it catches
-                if (intersects[0].distance < 100) {
-                    if (!hovered) {
-                        console.log('Hover Start!');
-                        setHovered(true);
-                    }
-                } else {
-                    if (hovered) {
-                        console.log('Hover End (Distance)');
-                        setHovered(false);
-                    }
+            const isHit = intersects.length > 0;
+            // "Close distance" threshold for interaction
+            // INCREASED to 50 based on user feedback (camera distance + model scale)
+            const isClose = isHit && intersects[0].distance < 60;
+
+            // Debug distance occasionally
+
+
+            // Handle Interaction State for Parent (Strict range)
+            if (props.onInteractionChange) {
+                // We use a ref to track previous state to avoid infinite render loops in parent
+                if (internalRef.current.userData.canInteract !== isClose) {
+
+                    internalRef.current.userData.canInteract = isClose;
+                    props.onInteractionChange(isClose);
                 }
             } else {
-                if (hovered) {
-                    console.log('Hover End (No Hit)');
-                    setHovered(false);
-                }
+                if (frameCount.current % 120 === 0) console.warn("onInteractionChange prop is missing!");
+            }
+
+            // Update local hovered state for visual feedback (outline, label)
+            if (hovered !== isClose) {
+                setHovered(isClose);
             }
         }
     });
@@ -92,34 +98,32 @@ export const Computer80s = forwardRef((props, ref) => {
                 />
             )}
 
-            {/* Label */}
-            {hovered && (
-                <Html
-                    position={props.labelPosition || [0, 4, 0]}
-                    center
-                    distanceFactor={15}
-                    zIndexRange={[200, 0]} // High Z-index range
-                    style={{ pointerEvents: 'none' }}
-                >
-                    <div style={{
-                        color: '#4db8ff',
-                        fontFamily: "'Orbitron', sans-serif",
-                        fontSize: '48px',
-                        fontWeight: 'bold',
-                        background: 'rgba(0,0,0,0.8)',
-                        padding: '16px 32px', // increased padding to match scale
-                        border: '4px solid #4db8ff', // increased border thickness
-                        borderRadius: '16px', // increased radius
-                        textShadow: '0 0 20px #4db8ff', // increased glow
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 0 40px rgba(77, 184, 255, 0.4)'
-                    }}>
-                        ME
-                    </div>
-                </Html>
-            )}
+            {/* Label - Always visible */}
+            <Html
+                position={props.labelPosition || [0.5, 1, 0]}
+                center
+                distanceFactor={15}
+                zIndexRange={[200, 0]} // High Z-index range
+                style={{ pointerEvents: 'none' }}
+            >
+                <div style={{
+                    color: '#4db8ff',
+                    fontFamily: "'Orbitron', sans-serif",
+                    fontSize: '48px',
+                    fontWeight: 'bold',
+                    background: 'rgba(0,0,0,0.8)',
+                    padding: '16px 32px', // increased padding to match scale
+                    border: '4px solid #4db8ff', // increased border thickness
+                    borderRadius: '16px', // increased radius
+                    textShadow: '0 0 20px #4db8ff', // increased glow
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 0 40px rgba(77, 184, 255, 0.4)'
+                }}>
+                    ME
+                </div>
+            </Html>
         </group>
     );
 });
 
-useGLTF.preload('/computer80s.glb');
+useGLTF.preload('/arcadeMachineBenoujja.glb');
