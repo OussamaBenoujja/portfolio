@@ -15,7 +15,32 @@ const SkillModel = ({ file, scale, position, rotation }) => {
     const { scene } = useGLTF(file);
     const clone = useMemo(() => scene.clone(), [scene]);
 
-    return <primitive object={clone} scale={[scale, scale, scale]} position={position} rotation={rotation} />;
+    // Constant Outline
+    const outlineScene = useMemo(() => {
+        const outline = scene.clone();
+        const outlineMaterial = new THREE.MeshBasicMaterial({
+            color: '#0088ff', // Blue Hue
+            side: THREE.BackSide,
+            transparent: true,
+            opacity: 0.5,
+            depthTest: true,
+            depthWrite: false
+        });
+
+        outline.traverse((child) => {
+            if (child.isMesh) {
+                child.material = outlineMaterial;
+            }
+        });
+        return outline;
+    }, [scene]);
+
+    return (
+        <group position={position} rotation={rotation}>
+            <primitive object={clone} scale={[scale, scale, scale]} />
+            <primitive object={outlineScene} scale={[scale * 1.02, scale * 1.02, scale * 1.02]} />
+        </group>
+    );
 };
 
 const SkillRing = () => {

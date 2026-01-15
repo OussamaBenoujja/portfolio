@@ -3,6 +3,7 @@ import ParticleHero from './components/ParticleHero';
 import Experience from './components/Experience';
 import LoadingScreen from './components/LoadingScreen';
 import AboutMeScene from './components/AboutMeScene';
+import Navbar from './components/Navbar';
 
 // import { ShuttleTunerScene } from './components/ShuttleTunerScene';
 
@@ -22,8 +23,16 @@ function App() {
         }
     }, [viewMode]);
 
+    const handleNavigate = (scene, view) => {
+        setCurrentScene(scene);
+        if (view) setViewMode(view);
+    };
+
     return (
         <div className="app">
+            {/* Global Navigation HUD */}
+            <Navbar currentScene={currentScene} viewMode={viewMode} onNavigate={handleNavigate} />
+
             {/* Loading Screen Overlay */}
             <LoadingScreen />
 
