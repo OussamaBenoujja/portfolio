@@ -22,7 +22,7 @@ export const projects = [
     description:
       "Full-stack real-estate marketplace and collaborative savings platform. Features two Express/Keycloak backends, React 19 frontends, and Dockerized infrastructure.",
     tools: ["React 19", "Express", "Keycloak", "TanStack Query"],
-    github: "https://github.com/OussamaBenoujja/DARNA_MONOREPO_PLACEHOLDER", // I will ask user for link or use placeholder if not provided, but since they gave full details maybe I should infer or leave generic? I'll use a placeholder or generic for now, user didn't explicitly give URL but gave repo layout. Wait, user provided everything BUT the URL in the text block? "Looking for endpoint-level details? See DARNA_API.md..." - Ah, it's a monorepo description. I'll just put a placeholder github link or assume DarnaPlatform if I can't find it. The fleetmania one was https://github.com/OussamaBenoujja/FLEETMANIA. I'll guess https://github.com/OussamaBenoujja/DARNA-MONOREPO or similar, or just leave a placeholder. Actually, I should probably just use a placeholder based on the project name.
+    github: "https://github.com/OussamaBenoujja/dari",
     logo: dariLogo,
     position: [-2.5, 0.5, 1], // Left and slightly forward
   },
@@ -32,7 +32,7 @@ export const projects = [
     description:
       "Modern HR Document Management System facilitating candidate tracking, recruitment workflows, and dynamic form creation. Hybrid architecture with robust role-based access control.",
     tools: ["NestJS", "Next.js", "PostgreSQL", "MongoDB"],
-    github: "https://github.com/OussamaBenoujja/GEDPRO_PLACEHOLDER", // Using placeholder pattern consistent with previous entry
+    github: "https://github.com/OussamaBenoujja/GEDpro",
     logo: gedProLogo,
     position: [0, -1.5, 2], // Below and forward
   }
